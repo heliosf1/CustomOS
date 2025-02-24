@@ -1,5 +1,10 @@
 #include "BasicRenderer.h"
 
+BasicRenderer::BasicRenderer()
+{	
+	CursorPosition = {15, 50};
+	color = 0xffffffff;
+}
 BasicRenderer::BasicRenderer(FrameBuffer* framebuffer, PSF1_FONT* font)
 {
 	targetFramebuffer = framebuffer;
@@ -13,6 +18,12 @@ BasicRenderer::BasicRenderer(FrameBuffer* framebuffer, PSF1_FONT* font, unsigned
 	psf1_font = font;
 	color = clr;
 	CursorPosition = pos;
+}
+BasicRenderer::BasicRenderer(BootInfo* bootInfo)
+{
+	targetFramebuffer = bootInfo->framebuffer;
+	psf1_font = bootInfo->psf1_font;
+	color = 0xffffffff;
 }
 void BasicRenderer::Print( const char* str)
 {

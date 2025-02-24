@@ -137,6 +137,14 @@ int memcmp(const void* aptr, const void* bptr, size_t n) //checks if elf file is
 		return 0;
 }
 
+typedef struct{
+	FrameBuffer* framebuffer;
+	PSF1_FONT* psf1_font;
+	EFI_MEMORY_DESCRIPTOR* mMap;
+	UINTN mMapSize;
+	UINTN mMapDescriptorSize;
+} BootInfo;
+
 EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 {
 	InitializeLib(ImageHandle, SystemTable); // init uefi environment to recognize special commands
@@ -150,7 +158,7 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	}
 	else
 	{
-		Print(L"Kernel Loaded Succesfully\n\r");
+		Print(L"Kernel Loaded Successfully\n\r");
 	}
 
 	Elf64_Ehdr header;//elf64 header
@@ -177,7 +185,7 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		Print(L"Kernel format is bad\n\r");
 	}
 	else{
-		Print(L"Kernel header succesfully verified\n\r");
+		Print(L"Kernel header successfully verified\n\r");
 	}
 	Elf64_Phdr* phdrs; //load program info from elf file into memory (phdr = Program header)  [this is a struct]
 	{
@@ -208,10 +216,7 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 			}
 		}
 	}
-//call entry of the kernel (kernel.c) 
-//define void function pointer at address of header.e_Entry, and giving attribute for the compiler to use correct calling conventions, and returning to this point  	
-	void(*KernelStart)(FrameBuffer*, PSF1_FONT*/*Insert info here z.B. memory map or graphics info */ ) = ((__attribute__((sysv_abi)) void (*)(FrameBuffer*, PSF1_FONT*) ) header.e_entry); //entry function pointer
-	
+
 	PSF1_FONT* newFont = LoadPSF1Font(NULL, L"zap-light16.psf", ImageHandle, SystemTable); //load font file
 	if(newFont == NULL) //check if font file is valid
 	{
@@ -231,8 +236,30 @@ EFI_STATUS efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		newBuffer->Height, 
 		newBuffer->PixelsPerScanLine);
 
+	EFI_MEMORY_DESCRIPTOR* Map = NULL; //ptr to MemoryDescriptor struct which contains Page number, physical address and type of memory section
+	UINTN MapSize, MapKey; //
+	UINTN DescriptorSize; //Size of each Descriptor entry
+	UINT32 DescriptorVersion;
+	{
+		SystemTable->BootServices->GetMemoryMap(&MapSize, Map, &MapKey, &DescriptorSize, &DescriptorVersion); //get mMap info
+		SystemTable->BootServices->AllocatePool(EfiLoaderData, MapSize, (void**)&Map); //Allocate memory for mMap
+		SystemTable->BootServices->GetMemoryMap(&MapSize, Map, &MapKey, &DescriptorSize, &DescriptorVersion); 
+	}
 
-    KernelStart(newBuffer, newFont); 
+//call entry of the kernel (kernel.c) 
+//define void function pointer at address of header.e_Entry, and giving attribute for the compiler to use correct calling conventions, and returning to this point  	
+	void(*KernelStart)(BootInfo*/*Insert info here z.B. memory map or graphics info */ ) = ((__attribute__((sysv_abi)) void (*)(BootInfo*) ) header.e_entry); //entry function pointer
+	
+	BootInfo bootInfo;
+	bootInfo.framebuffer = newBuffer;
+	bootInfo.psf1_font = newFont;
+	bootInfo.mMap = Map;
+	bootInfo.mMapSize = MapSize;
+	bootInfo.mMapDescriptorSize = DescriptorSize;
+
+	SystemTable->BootServices->ExitBootServices(ImageHandle, MapKey); //Exit to prevent EFI runtime/kernel termination; Free up system resources needed for UEFI runtime
+
+    KernelStart(&bootInfo); 
 
 	Print(L"Kernel Loaded \n\r");
 

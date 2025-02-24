@@ -1,9 +1,12 @@
+#include <stdint.h>
 #include "BasicRenderer.h"
 #include "cstr.h"
 
-extern "C" /*ext C for linker to find and link as entry function*/ void _start(FrameBuffer* framebuffer, PSF1_FONT* psf1_font)
-{	
-	BasicRenderer newRenderer = BasicRenderer(framebuffer, psf1_font); 
+
+extern "C" void _start(BootInfo* bootInfo){
+    
+    BasicRenderer newRenderer = BasicRenderer(bootInfo); 
+	newRenderer.CursorPosition = {15, 50};
 	newRenderer.Print(toString((uint64_t)2342));
 	newRenderer.CursorPosition = {15, 70};
 	newRenderer.Print(toString((int64_t)-242));
