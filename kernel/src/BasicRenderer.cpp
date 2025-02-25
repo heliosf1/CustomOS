@@ -49,14 +49,7 @@ BasicRenderer::BasicRenderer(BootInfo* bootInfo, uint8_t r, uint8_t g, uint8_t b
 }
 uint32_t BasicRenderer::GetColor()
 {
-	uint8_t clrComponent[4] = {blue, green, red, alpha};
-	uint32_t c = 0;
-	for(int i = 0; i < 4; i++)
-	{
-		c += clrComponent[i] << (i * 8); //bitshift every 8 bits(2 digit hex = 8 digit binary) 
-	}
-
-	return c;
+	return (alpha << 24) + (red << 16) + (green << 8) + (blue); // bitshift for each pos; hex sequence is ARGB
 
 }
 void BasicRenderer::Print( const char* str)

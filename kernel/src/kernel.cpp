@@ -6,7 +6,7 @@
 extern "C" void _start(BootInfo* bootInfo){
     
 
-    BasicRenderer newRenderer = BasicRenderer(bootInfo, 217, 255, 212, 0, {15, 0}); 
+    BasicRenderer newRenderer = BasicRenderer(bootInfo, 127, 255, 212, 0, {15, 0}); 
 	newRenderer.Print(toHexString(newRenderer.color));
 	newRenderer.CursorPosition = {15, 16};
 	newRenderer.Print(toHexString((uint8_t)newRenderer.red));
