@@ -108,7 +108,7 @@ const char* toHexString(uint64_t value)
     uint8_t size = sizeof(uint64_t) * 2 - 1; //max size for full hex representation; 32bit hex is 8 digits
     for(uint8_t i = 0; i < size; i++)
     {
-        ptr = ((uint8_t*)valPtr + i); //ptr for every 2 hex digits (4bits/digit); increment after mapping every
+        ptr = ((uint8_t*)valPtr + i); //ptr for every 2 hex digits (4bits/digit); increment after mapping every digit
         temp = ((*ptr & 0xF0) >> 4); //get left side of number, bitshift by 4
         hexTo_StringOutput64[size - (i * 2 + 1)/*add to first position of 8bit chunk*/] = temp + (temp > 9 ? 55 : '0'); // add to array, check if it is a digit or a character
         temp = ((*ptr & 0x0F)); //get right side of number

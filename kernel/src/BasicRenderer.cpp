@@ -19,11 +19,45 @@ BasicRenderer::BasicRenderer(FrameBuffer* framebuffer, PSF1_FONT* font, unsigned
 	color = clr;
 	CursorPosition = pos;
 }
+BasicRenderer::BasicRenderer(FrameBuffer* framebuffer, PSF1_FONT* font, uint8_t r, uint8_t g, uint8_t b, uint8_t a, Point pos)
+{
+	targetFramebuffer = framebuffer;
+	psf1_font = font;
+	CursorPosition = pos;
+	red = r;
+	green = g;
+	blue = b;
+	alpha = a;
+	color = GetColor();
+}
 BasicRenderer::BasicRenderer(BootInfo* bootInfo)
 {
 	targetFramebuffer = bootInfo->framebuffer;
 	psf1_font = bootInfo->psf1_font;
 	color = 0xffffffff;
+}
+BasicRenderer::BasicRenderer(BootInfo* bootInfo, uint8_t r, uint8_t g, uint8_t b, uint8_t a, Point pos)
+{
+	targetFramebuffer = bootInfo->framebuffer;
+	psf1_font = bootInfo->psf1_font;	
+	CursorPosition = pos;
+	red = r;
+	green = g;
+	blue = b;
+	alpha = a;
+	color = GetColor();
+}
+uint32_t BasicRenderer::GetColor()
+{
+	uint8_t clrComponent[4] = {blue, green, red, alpha};
+	uint32_t c = 0;
+	for(int i = 0; i < 4; i++)
+	{
+		c += clrComponent[i] << (i * 8); //bitshift every 8 bits(2 digit hex = 8 digit binary) 
+	}
+
+	return c;
+
 }
 void BasicRenderer::Print( const char* str)
 {
