@@ -4,7 +4,11 @@
 #include "efiMemory.h"
 #include "memory.h"
 #include "bitmap.h"
+#include "PageFrameAllocator.h"
 
+
+extern uint64_t _KernelStart;
+extern uint64_t _KernelEnd;
 
 
 extern "C" void _start(BootInfo* bootInfo){
@@ -35,6 +39,39 @@ extern "C" void _start(BootInfo* bootInfo){
 	// newRenderer.CursorPosition = {500, 190};
 
 	// newRenderer.CursorPosition = {500, 210};
+	
+	PageFrameAllocator newAllocator;
+	newAllocator.ReadEFIMemoryMap(bootInfo->mMap, bootInfo->mMapSize, bootInfo->mMapDescSize);
+
+	newRenderer.CursorPosition = {0, 16};
+	newRenderer.Print("Free RAM: ");
+	newRenderer.Print(toString(newAllocator.GetFreeRAM() / 1024));
+	newRenderer.Print(" KB.");	
+	
+	newRenderer.CursorPosition = {0, 32};
+	newRenderer.Print("Used RAM: ");
+	newRenderer.Print(toString(newAllocator.GetUsedRAM() / 1024));
+	newRenderer.Print(" KB.");
+
+	newRenderer.CursorPosition = {0, 48};
+	newRenderer.Print("Reserved RAM: ");
+	newRenderer.Print(toString(newAllocator.GetReservedRAM() / 1024));
+	newRenderer.Print(" KB.");
+	newRenderer.CursorPosition = {0, 64};
+
+
+	uint64_t kernelSize = (uint64_t)&_KernelEnd - (uint64_t)&_KernelStart; //size of kernel in memory
+	uint64_t kernelPages = (uint64_t)kernelSize / 4096 + 1; //number of pages needed for kernel
+
+	newAllocator.LockPages(&_KernelStart, kernelPages);
+
+	for(int t = 0; t < 20; t++)
+	{
+		void* address = newAllocator.RequestPage();
+		newRenderer.Print(toHexString((uint64_t)address));
+		newRenderer.CursorPosition = {0, newRenderer.CursorPosition.y + 16};
+	}
+
 
 	uint64_t mMapEntries = bootInfo->mMapSize / bootInfo->mMapDescSize;
 
