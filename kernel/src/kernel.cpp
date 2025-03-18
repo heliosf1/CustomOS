@@ -14,36 +14,11 @@ extern uint64_t _KernelEnd;
 
 
 extern "C" void _start(BootInfo* bootInfo){
-
 	
 	GlobalAllocator = PageFrameAllocator();
 	uint64_t mMapEntries = bootInfo->mMapSize / bootInfo->mMapDescSize;
     BasicRenderer newRenderer = BasicRenderer(bootInfo, 127, 255, 212, 0, {500, 0}); 
-	// newRenderer.Print(toHexString(newRenderer.color));
-	// newRenderer.CursorPosition = {500, 16};
-	// newRenderer.Print(toHexString((uint8_t)newRenderer.red));
-	// newRenderer.CursorPosition = {500, 32};
-	// newRenderer.Print(toHexString((uint8_t)newRenderer.green));
-	// newRenderer.CursorPosition = {500, 48};
-	// newRenderer.Print(toHexString((uint8_t)newRenderer.blue));
-	// newRenderer.CursorPosition = {500, 64};
-	// newRenderer.Print(toString((uint64_t)2342));
-	// newRenderer.CursorPosition = {500, 80};
-	// newRenderer.Print(toString((int64_t)-242));
-	// newRenderer.CursorPosition = {500, 96};
-	// newRenderer.Print(toString((double)-42.26));
-	// newRenderer.CursorPosition = {500,112};
-	// newRenderer.Print(toHexString((uint64_t)0xF2));
-	// newRenderer.CursorPosition = {500, 130};
-	// newRenderer.Print(toHexString((uint32_t)0xFA));
-	// newRenderer.CursorPosition = {500, 150};
-	// newRenderer.Print(toHexString((uint16_t)0xF3));
-	// newRenderer.CursorPosition = {500, 170};
-	// newRenderer.Print(toHexString((uint8_t)0xF5));
-	// newRenderer.CursorPosition = {500, 190};
-
-	// newRenderer.CursorPosition = {500, 210};
-	
+		
 	GlobalAllocator.ReadEFIMemoryMap(bootInfo->mMap, bootInfo->mMapSize, bootInfo->mMapDescSize);
 
 	newRenderer.CursorPosition = {0, 16};
@@ -80,6 +55,7 @@ extern "C" void _start(BootInfo* bootInfo){
 
 	uint64_t fbBase = (uint64_t)bootInfo->framebuffer->BaseAddress;
 	uint64_t fbSize = (uint64_t)bootInfo->framebuffer->BufferSize + 0x1000;
+	GlobalAllocator.LockPages((void*)fbBase, fbSize / 0x1000 + 1);
 
 	for(uint64_t t = fbBase; t < fbBase + fbSize; t += 4096){
 		pageTableManager.MapMemory((void*)t, (void*)t);
@@ -87,6 +63,8 @@ extern "C" void _start(BootInfo* bootInfo){
 
 	asm("mov %0, %%cr3" : : "r" (PML4)); //put PML4 into register0; move value into cr3 register
 
+	memoryset(bootInfo->framebuffer->BaseAddress, 0, bootInfo->framebuffer->BufferSize);
+	
 	pageTableManager.MapMemory((void*)0x600000000, (void*)0x80000);
 	uint64_t* test = (uint64_t*)0x600000000;
 	*test = 26;
