@@ -13,6 +13,12 @@ extern "C" void _start(BootInfo* bootInfo){
 	newRenderer.Print("Kernel initialized succesfully");
 
 
+	for(int t = 0; t < 2000; t++)
+	{
+		GlobalAllocator.RequestPage();
+	}
+	newRenderer.CursorPosition = {0, 200};
+	newRenderer.Print("Done");
 	while(true);
-	
+
 }
