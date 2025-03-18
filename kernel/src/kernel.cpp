@@ -4,16 +4,20 @@
 #include "efiMemory.h"
 #include "memory.h"
 #include "bitmap.h"
-#include "PageFrameAllocator.h"
-
+#include "paging/PageFrameAllocator.h"
+#include "paging/PageMapIndexer.h"
+#include "paging/PageTableManager.h"
+#include "paging/paging.h"
 
 extern uint64_t _KernelStart;
 extern uint64_t _KernelEnd;
 
 
 extern "C" void _start(BootInfo* bootInfo){
-    
 
+	
+	GlobalAllocator = PageFrameAllocator();
+	uint64_t mMapEntries = bootInfo->mMapSize / bootInfo->mMapDescSize;
     BasicRenderer newRenderer = BasicRenderer(bootInfo, 127, 255, 212, 0, {500, 0}); 
 	// newRenderer.Print(toHexString(newRenderer.color));
 	// newRenderer.CursorPosition = {500, 16};
@@ -40,40 +44,72 @@ extern "C" void _start(BootInfo* bootInfo){
 
 	// newRenderer.CursorPosition = {500, 210};
 	
-	PageFrameAllocator newAllocator;
-	newAllocator.ReadEFIMemoryMap(bootInfo->mMap, bootInfo->mMapSize, bootInfo->mMapDescSize);
+	GlobalAllocator.ReadEFIMemoryMap(bootInfo->mMap, bootInfo->mMapSize, bootInfo->mMapDescSize);
 
 	newRenderer.CursorPosition = {0, 16};
 	newRenderer.Print("Free RAM: ");
-	newRenderer.Print(toString(newAllocator.GetFreeRAM() / 1024));
+	newRenderer.Print(toString(GlobalAllocator.GetFreeRAM() / 1024));
 	newRenderer.Print(" KB.");	
 	
 	newRenderer.CursorPosition = {0, 32};
 	newRenderer.Print("Used RAM: ");
-	newRenderer.Print(toString(newAllocator.GetUsedRAM() / 1024));
+	newRenderer.Print(toString(GlobalAllocator.GetUsedRAM() / 1024));
 	newRenderer.Print(" KB.");
 
 	newRenderer.CursorPosition = {0, 48};
 	newRenderer.Print("Reserved RAM: ");
-	newRenderer.Print(toString(newAllocator.GetReservedRAM() / 1024));
+	newRenderer.Print(toString(GlobalAllocator.GetReservedRAM() / 1024));
 	newRenderer.Print(" KB.");
 	newRenderer.CursorPosition = {0, 64};
 
-
+	
 	uint64_t kernelSize = (uint64_t)&_KernelEnd - (uint64_t)&_KernelStart; //size of kernel in memory
 	uint64_t kernelPages = (uint64_t)kernelSize / 4096 + 1; //number of pages needed for kernel
 
-	newAllocator.LockPages(&_KernelStart, kernelPages);
+	
+	GlobalAllocator.LockPages(&_KernelStart, kernelPages);
 
-	for(int t = 0; t < 20; t++)
-	{
-		void* address = newAllocator.RequestPage();
-		newRenderer.Print(toHexString((uint64_t)address));
-		newRenderer.CursorPosition = {0, newRenderer.CursorPosition.y + 16};
+	PageTable* PML4 = (PageTable*)GlobalAllocator.RequestPage();
+	memoryset(PML4, 0, 0x1000);
+	
+	PageTableManager pageTableManager = PageTableManager(PML4);
+
+	for(uint64_t t = 0; t < GetMemorySize(bootInfo->mMap, mMapEntries, bootInfo->mMapDescSize); t += 0x1000){
+		pageTableManager.MapMemory((void*)t, (void*)t);
 	}
 
+	uint64_t fbBase = (uint64_t)bootInfo->framebuffer->BaseAddress;
+	uint64_t fbSize = (uint64_t)bootInfo->framebuffer->BufferSize + 0x1000;
 
-	uint64_t mMapEntries = bootInfo->mMapSize / bootInfo->mMapDescSize;
+	for(uint64_t t = fbBase; t < fbBase + fbSize; t += 4096){
+		pageTableManager.MapMemory((void*)t, (void*)t);
+	}
+
+	asm("mov %0, %%cr3" : : "r" (PML4)); //put PML4 into register0; move value into cr3 register
+
+	pageTableManager.MapMemory((void*)0x600000000, (void*)0x80000);
+	uint64_t* test = (uint64_t*)0x600000000;
+	*test = 26;
+	
+	newRenderer.CursorPosition = {200, 200};
+	newRenderer.Print(toString(*test));
+	newRenderer.Print(" - ");
+	newRenderer.Print("New Map!");
+
+	
+	newRenderer.CursorPosition = {0, 80};
+	PageMapIndexer pageIndexer = PageMapIndexer(0x2000);
+	newRenderer.Print(toString(pageIndexer.P_i));
+	newRenderer.Print(" - ");
+	newRenderer.Print(toString(pageIndexer.PT_i));
+	newRenderer.Print(" - ");
+	newRenderer.Print(toString(pageIndexer.PD_i));
+	newRenderer.Print(" - ");
+	newRenderer.Print(toString(pageIndexer.PDP_i));
+	newRenderer.Print(" - ");
+	newRenderer.Print(toString(pageIndexer.PDP_i));
+	newRenderer.Print(" - ");
+
 
 	uint8_t testBuffer[20];
 
