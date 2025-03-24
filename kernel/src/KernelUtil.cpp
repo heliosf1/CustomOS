@@ -41,6 +41,10 @@ void PrepareMemory(BootInfo* bootInfo)
 
 KernelInfo InitializeKernel(BootInfo* BootInfo)
 {
+	GDTDescriptor gdtDescriptor;
+	gdtDescriptor.Size = sizeof(GDT) - 1; //-1 because of GDT design
+	gdtDescriptor.Offset = (uint64_t)&DefaultGDT;
+	LoadGDT(&gdtDescriptor);
     PrepareMemory(BootInfo);
 
     
