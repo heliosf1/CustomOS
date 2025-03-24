@@ -1,8 +1,8 @@
 #include "IDT.h"
 
 void IDTDescEntry::SetOffset(uint64_t offset){
-    offset0 = (uint16_t)(offset & 0x000000000000ffff);
-    offset1 = (uint16_t)((offset & 0x00000000ffff0000) >> 16);
+    offset0 = (uint16_t)(offset & 0x000000000000ffff); //get lower 16 bits of offset
+    offset1 = (uint16_t)((offset & 0x00000000ffff0000) >> 16); 
     offset2 = (uint32_t)((offset & 0xffffffff00000000) >> 32);
 }
 
