@@ -4,7 +4,6 @@
 #include "SimpleFont.h"
 #include "efiMemory.h"
 #include <cstdint>
-
 struct BootInfo {
 	FrameBuffer* framebuffer;
 	PSF1_FONT* psf1_font;

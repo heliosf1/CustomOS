@@ -1,5 +1,7 @@
 #include "BasicRenderer.h"
 
+BasicRenderer* GlobalRenderer;
+
 BasicRenderer::BasicRenderer()
 {	
 	CursorPosition = {15, 50};

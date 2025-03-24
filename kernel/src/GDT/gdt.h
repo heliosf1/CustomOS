@@ -1,9 +1,8 @@
 #pragma once
 
 #include <cstdint>
-
 struct GDTDescriptor{
-    uint16_t size;
+    uint16_t Size;
     uint64_t Offset;
 } __attribute__((packed)); //ensures no bytes are inserted between class members for optimization
 

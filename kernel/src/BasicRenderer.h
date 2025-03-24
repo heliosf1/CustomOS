@@ -27,3 +27,6 @@ class BasicRenderer{
     void putChar(char chr, Point offset);
 
 };
+
+
+extern BasicRenderer* GlobalRenderer;
