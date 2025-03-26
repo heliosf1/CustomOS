@@ -1,7 +1,4 @@
 #include "kernelUtil.h"
-#include "GDT/gdt.h"
-#include "interrupts/IDT.h"
-#include "interrupts/interrupts.h"
 
 KernelInfo kernelInfo; 
 PageTableManager pageTableManager = NULL;
@@ -11,8 +8,8 @@ void PrepareMemory(BootInfo* bootInfo){
     GlobalAllocator = PageFrameAllocator();
     GlobalAllocator.ReadEFIMemoryMap(bootInfo->mMap, bootInfo->mMapSize, bootInfo->mMapDescSize);
 
-    uint64_t kernelSize = (uint64_t)&_KernelEnd - (uint64_t)&_KernelStart;
-    uint64_t kernelPages = (uint64_t)kernelSize / 4096 + 1;
+    uint64_t kernelSize = (uint64_t)&_KernelEnd - (uint64_t)&_KernelStart; //size of kernel in memory
+    uint64_t kernelPages = (uint64_t)kernelSize / 4096 + 1; //number of pages needed for kernel
 
     GlobalAllocator.LockPages(&_KernelStart, kernelPages);
 
@@ -32,7 +29,7 @@ void PrepareMemory(BootInfo* bootInfo){
         pageTableManager.MapMemory((void*)t, (void*)t);
     }
 
-    asm ("mov %0, %%cr3" : : "r" (PML4));
+    asm ("mov %0, %%cr3" : : "r" (PML4)); //put PML4 into register0; move value into cr3 register
 
     kernelInfo.pageTableManager = &pageTableManager;
 }
@@ -47,7 +44,31 @@ void PrepareInterrupts(){
     int_PageFault->type_attr = IDT_TA_InterruptGate;
     int_PageFault->selector = 0x08;
 
+    IDTDescEntry* int_DoubleFault = (IDTDescEntry*)(idtr.Offset + 0x8 * sizeof(IDTDescEntry));
+    int_DoubleFault->SetOffset((uint64_t)DoubleFault_Handler);
+    int_DoubleFault->type_attr = IDT_TA_InterruptGate;
+    int_DoubleFault->selector = 0x08;
+
+    IDTDescEntry* int_GPFault = (IDTDescEntry*)(idtr.Offset + 0xD * sizeof(IDTDescEntry));
+    int_GPFault->SetOffset((uint64_t)GPFault_Handler);
+    int_GPFault->type_attr = IDT_TA_InterruptGate;
+    int_GPFault->selector = 0x08;
+
+    IDTDescEntry* int_Keyboard = (IDTDescEntry*)(idtr.Offset + 0x21 * sizeof(IDTDescEntry));
+    int_Keyboard->SetOffset((uint64_t)KeyboardInt_Handler);
+    int_Keyboard->type_attr = IDT_TA_InterruptGate;
+    int_Keyboard->selector = 0x08;
     asm ("lidt %0" : : "m" (idtr));
+
+    RemapPIC();
+
+    outb(PIC1_DATA, 0b11111101);
+    outb(PIC2_DATA, 0b11111111);
+    
+    asm("sti");
+    //asm("cli"); <- canceling command
+    
+
 }
 
 BasicRenderer r = BasicRenderer(NULL, NULL);

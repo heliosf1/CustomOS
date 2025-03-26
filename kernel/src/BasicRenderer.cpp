@@ -49,10 +49,38 @@ BasicRenderer::BasicRenderer(BootInfo* bootInfo, uint8_t r, uint8_t g, uint8_t b
 	alpha = a;
 	color = GetColor();
 }
+
 uint32_t BasicRenderer::GetColor()
 {
 	return (alpha << 24) + (red << 16) + (green << 8) + (blue); // bitshift for each pos; hex sequence is ARGB
 
+}
+
+void BasicRenderer::Clear(uint32_t color){
+	uint64_t fbBase = (uint64_t)targetFramebuffer->BaseAddress;
+	uint64_t bytesPerScanline = targetFramebuffer->PixelsPerScanLine * 4;
+	uint64_t fbHeight = targetFramebuffer->Height;
+	uint64_t fbSize = targetFramebuffer->BufferSize;
+
+	for(int verticalScanline = 0; verticalScanline < fbHeight; verticalScanline++)
+	{
+		uint64_t pixPtrBase = fbBase + (bytesPerScanline * verticalScanline);
+		for(uint32_t* pixPtr = (uint32_t*)pixPtrBase; pixPtr < (uint32_t*)(pixPtrBase + bytesPerScanline); pixPtr++){
+			*pixPtr = color;
+		}
+	}
+}
+void BasicRenderer::Next(){
+	CursorPosition.x = 0;
+	CursorPosition.y +=16;
+}
+
+void BasicRenderer::SetRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a){
+	red = r;
+	green = g;
+	blue = b;	
+	alpha = a;
+	color = GetColor();
 }
 void BasicRenderer::Print( const char* str)
 {

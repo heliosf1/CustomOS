@@ -10,7 +10,10 @@
 #include "paging/PageMapIndexer.h"
 #include "paging/paging.h"
 #include "paging/PageTableManager.h"
-
+#include "GDT/gdt.h"
+#include "interrupts/IDT.h"
+#include "interrupts/interrupts.h"
+#include "IO.h"
 
 extern uint64_t _KernelStart;
 extern uint64_t _KernelEnd;

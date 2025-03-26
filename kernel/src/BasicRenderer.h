@@ -3,7 +3,7 @@
 #include "math.h"
 #include "Framebuffer.h"
 #include "SimpleFont.h"
-#include <stdint.h>
+#include <cstdint>
 #include "BootInfo.h"
 
 class BasicRenderer{
@@ -23,9 +23,11 @@ class BasicRenderer{
     uint8_t blue;
     uint8_t alpha;
     uint32_t GetColor();
+    void SetRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
     void Print(const char* str);
     void putChar(char chr, Point offset);
-
+    void Clear(uint32_t color);
+    void Next();
 };
 
 
