@@ -56,7 +56,38 @@ uint32_t BasicRenderer::GetColor()
 
 }
 
-void BasicRenderer::Clear(uint32_t color){
+void BasicRenderer::ClearChar()
+{
+	if(CursorPosition.x == 0){
+		CursorPosition.x = targetFramebuffer->Width;
+		CursorPosition.y -= 16;
+		if(CursorPosition.y < 0){
+			CursorPosition.y = 0;
+		}
+	}
+	unsigned int xOff = CursorPosition.x;
+	unsigned int yOff = CursorPosition.y;
+	unsigned int* pixPtr = (unsigned int*)targetFramebuffer->BaseAddress; //ptr to baseAddress
+	for(unsigned long y = yOff; y < yOff + 16; y++) //select y-axis bitmap coordinate (16bit wide)
+	{
+		for(unsigned long x = xOff - 8; x < xOff; x++) //select x-axis bitmap coordinate (8bit wide)
+		{
+			*(unsigned int*)(pixPtr + x + (y * targetFramebuffer->PixelsPerScanLine)) = clearColor; //assign clearColor to bit
+		}
+	}
+
+	CursorPosition.x -= 8;
+
+	if(CursorPosition.x < 0){
+		CursorPosition.x = targetFramebuffer->Width;
+		CursorPosition.y -= 16;
+		if(CursorPosition.y < 0){
+			CursorPosition.y = 0;
+		}
+	}
+}
+
+void BasicRenderer::Clear(){
 	uint64_t fbBase = (uint64_t)targetFramebuffer->BaseAddress;
 	uint64_t bytesPerScanline = targetFramebuffer->PixelsPerScanLine * 4;
 	uint64_t fbHeight = targetFramebuffer->Height;
@@ -66,7 +97,7 @@ void BasicRenderer::Clear(uint32_t color){
 	{
 		uint64_t pixPtrBase = fbBase + (bytesPerScanline * verticalScanline);
 		for(uint32_t* pixPtr = (uint32_t*)pixPtrBase; pixPtr < (uint32_t*)(pixPtrBase + bytesPerScanline); pixPtr++){
-			*pixPtr = color;
+			*pixPtr = clearColor;
 		}
 	}
 }
@@ -112,4 +143,13 @@ void BasicRenderer::putChar(char chr, Point offset)
 		}
 		fontPtr++;
 	}
+}
+
+void BasicRenderer::putChar(char chr){
+	putChar(chr, CursorPosition);
+    CursorPosition.x += 8;
+    if (CursorPosition.x + 8 > targetFramebuffer->Width){
+        CursorPosition.x = 0; 
+        CursorPosition.y += 16;
+    }
 }

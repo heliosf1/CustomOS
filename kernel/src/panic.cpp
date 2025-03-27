@@ -2,7 +2,9 @@
 
 void Panic(const char* panicMessage)
 {
-    GlobalRenderer->Clear(0x00ff0000);
+
+    GlobalRenderer->clearColor = 0xffffffff;
+    GlobalRenderer->Clear();
 
     GlobalRenderer->CursorPosition = {0, 0};
     GlobalRenderer->SetRGBA(127, 255, 212, 0);
