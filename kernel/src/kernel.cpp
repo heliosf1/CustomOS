@@ -10,6 +10,10 @@ extern "C" void _start(BootInfo* bootInfo){
 	GlobalRenderer->CursorPosition = {200, 200};
 	GlobalRenderer->Print("Kernel initialized succesfully");
 	
+	while(true){
+		ProcessMousePacket();
+	}
+
 	while(true);
 
 }

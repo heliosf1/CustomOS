@@ -3,6 +3,7 @@
 #include "../panic.h"
 #include "../IO.h"
 #include "../userinput/keyboard.h"
+#include "../userinput/mouse.h"
 
 #define PIC1_COMMAND 0x20
 #define PIC1_DATA 0x21
@@ -16,10 +17,11 @@
 
 
 struct interrupt_frame;
-__attribute__((interrupt)) void PageFault_Handler(struct interrupt_frame* frame); //page faults
-__attribute__((interrupt)) void DoubleFault_Handler(struct interrupt_frame* frame); //>=2 faults in a row
-__attribute__((interrupt)) void GPFault_Handler(struct interrupt_frame* frame); // general protection fault ()
-__attribute__((interrupt)) void KeyboardInt_Handler(struct interrupt_frame* frame);
+__attribute__((interrupt)) void PageFault_Handler(interrupt_frame* frame); //page faults
+__attribute__((interrupt)) void DoubleFault_Handler(interrupt_frame* frame); //>=2 faults in a row
+__attribute__((interrupt)) void GPFault_Handler(interrupt_frame* frame); // general protection fault ()
+__attribute__((interrupt)) void KeyboardInt_Handler(interrupt_frame* frame);
+__attribute__((interrupt)) void MouseInt_Handler(interrupt_frame* frame);
 
 void RemapPIC();
 void PIC_EndMaster();

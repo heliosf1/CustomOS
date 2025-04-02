@@ -14,6 +14,7 @@
 #include "interrupts/IDT.h"
 #include "interrupts/interrupts.h"
 #include "IO.h"
+#include "userinput/mouse.h"
 
 extern uint64_t _KernelStart;
 extern uint64_t _KernelEnd;
